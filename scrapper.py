@@ -6,6 +6,11 @@ from selenium.webdriver.support import expected_conditions as EC
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import datetime
+import os
+
+#Desabilita a suspensão do computador (apenas enquanto o script corre)
+os.system("gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0")
+os.system("gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0")
 
 
 linkFA = 'https://www.fundoambiental.pt/veiculos-de-emissoes-nulas-ven-2024/total-candidaturas.aspx'
@@ -83,3 +88,7 @@ text_to_write_in_last_cell = "Mais " + diferencaDiariaAceitesSTR + " aceites"
 #Escreve na última célula de cada linha a diferença do número de candidaturas aceites entre o dia atual e o anterior
 range_to_write_diff = f'J{row_to_write}:J{row_to_write}'
 sheet.update(range_name = range_to_write_diff, values = [[text_to_write_in_last_cell]])
+
+#Habilita de novo a suspensão do computador
+os.system("gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 300")
+os.system("gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 300")
