@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import datetime
@@ -37,12 +38,14 @@ logging.info("Scrapper começou!")
 linkFA = 'https://www.fundoambiental.pt/veiculos-de-emissoes-nulas-ven-2024/total-candidaturas.aspx'
 path = '/home/afonso/Downloads/chromedriver-linux64/chromedriver'
 
+service = Service(executable_path = path)
+options = Options()
+options.add_argument("--headless")
+driver = webdriver.Chrome(service=service, options=options)
+
 #Espera até que a tabela esteja carregada no site
 try:
-    service = Service(executable_path = path)
-    driver = webdriver.Chrome(service = service)
     driver.get(linkFA)
-    
     WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "table"))
     )
@@ -128,3 +131,4 @@ except Exception as e:
 #Habilita de novo a suspensão do computador
 os.system("gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 300")
 os.system("gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 300")
+logging.info("Acabou!")
