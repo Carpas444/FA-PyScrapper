@@ -1,0 +1,85 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import datetime
+
+
+linkFA = 'https://www.fundoambiental.pt/veiculos-de-emissoes-nulas-ven-2024/total-candidaturas.aspx'
+path = '/home/afonso/Downloads/chromedriver-linux64/chromedriver'
+
+service = Service(executable_path = path)
+driver = webdriver.Chrome(service = service)
+driver.get(linkFA)
+
+#Espera até que a tabela esteja carregada no site
+WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.TAG_NAME, "table"))
+)
+
+#Encontra no site a tabela
+table = driver.find_element(By.TAG_NAME, 'table')
+#Pega em todas as colunas e guarda em rows
+rows = table.find_elements(By.TAG_NAME, 'tr')
+
+#Encontra a linha pretendida - neste caso, a linha correspondente à categoria das bicicletas elétricas
+target_text = "T4 - Bicicleta elétrica"
+target_row = None
+
+#Procura em cada linha pelo target_text e coloca a linha alvo em target_row, se encon
+for row in rows:
+    if target_text in row.text:
+        target_row = row
+        break
+
+#Este teste não seria totalmente necessário uma vez que, à partida, esta linha existirá sempre
+if target_row:
+    cells = target_row.find_elements(By.TAG_NAME, 'td')
+    data = [cell.text for cell in cells]
+    #print(data)
+else:
+    print("Erro: Linha não encontrada")
+    
+driver.quit()   
+
+#Filtrei os dados a escrever uma vez que apenas algumas colunas da linha me interessam
+dataToWrite = [data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11]]
+
+#Autenticação com as credenciais
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+client = gspread.authorize(creds)
+
+#Abre a folha de cálculo
+sheet = client.open("Progresso Fundo Ambiental").sheet1
+
+#Encontra a última linha com dados escritas na coluna A + 1 (i.e. linha onde pretendemos escrever)
+row_to_write = len(sheet.col_values(1)) + 1
+
+#Até à linha 70, é só para escrever a data e hora atuais na coluna A
+def formatar_para_duas_casas(numero):
+    return "{:02d}".format(numero)
+
+dataData = datetime.datetime.now()
+dataDiaEhora = str(formatar_para_duas_casas(dataData.day)) + '/' + str(formatar_para_duas_casas(dataData.month)) + '/' + str(dataData.year) + ' - ' + str(formatar_para_duas_casas(dataData.hour)) + ':' + str(formatar_para_duas_casas(dataData.minute))
+
+range_to_write_new_date = f'A{row_to_write}:A{row_to_write}'
+sheet.update(range_name=range_to_write_new_date, values=[[dataDiaEhora]])
+
+
+# Escreve os dados na sheet, começando na coluna B e acabando na coluna I
+range_to_write = f'B{row_to_write}:I{row_to_write}'
+sheet.update(range_name = range_to_write, values=[dataToWrite])
+
+celulaValorDoDiaAnterior = f'B{row_to_write - 1}'
+valorDoDiaAnterior = int(sheet.acell(celulaValorDoDiaAnterior).value)
+diferencaDiariaAceites = valorDoDiaAnterior - int(dataToWrite[0])
+diferencaDiariaAceitesSTR = str(diferencaDiariaAceites)
+text_to_write_in_last_cell = "Mais " + diferencaDiariaAceitesSTR + " aceites"
+
+#Escreve na última célula de cada linha a diferença do número de candidaturas aceites entre o dia atual e o anterior
+range_to_write_diff = f'J{row_to_write}:J{row_to_write}'
+sheet.update(range_name = range_to_write_diff, values = [[text_to_write_in_last_cell]])
