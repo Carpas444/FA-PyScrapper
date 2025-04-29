@@ -115,18 +115,18 @@ try:
 except Exception as e:
         logging.error(f"Ocorreu um erro: {str(e)}", exc_info=True)
 
-valorDoDiaAnterior = int(sheet.acell(f'B{row_to_write - 1}').value) #Calula o número de candidaturas aceites no dia anterior
-diferencaDiariaAceites = valorDoDiaAnterior - int(dataToWrite[0]) #Calcula a diferença do número de candidaturas aceites entre o dia atual e o anterior
+valorDoDiaAnteriorAceites = int(sheet.acell(f'B{row_to_write - 1}').value) #Calula o número de candidaturas aceites no dia anterior
+diferencaDiariaAceites = int(dataToWrite[0]) - valorDoDiaAnteriorAceites #Calcula a diferença do número de candidaturas aceites entre o dia atual e o anterior
 diferencaDiariaAceitesSTR = str(diferencaDiariaAceites) #Apenas transforma o valor inteiro numa string para poder concatenar com texto na linha imediatamente abaixo
 text_to_write_in_last_cell = "Mais " + diferencaDiariaAceitesSTR + " aceites" #Concatenação do texto com a diferença de valores
 
-
-range_to_write_diff = f'J{row_to_write}:J{row_to_write}' #Células (neste caso, apenas uma) onde se pretende escrever o text_to_write_in_last_cell
+range_to_write_diff_accepted = f'J{row_to_write}:J{row_to_write}' #Células (neste caso, apenas uma) onde se pretende escrever o text_to_write_in_last_cell
 try:
-    sheet.update(range_name = range_to_write_diff, values = [[text_to_write_in_last_cell]]) #Escreve na célula pretendida o text_to_write_in_last_cell
+    sheet.update(range_name = range_to_write_diff_accepted, values = [[text_to_write_in_last_cell]]) #Escreve na célula pretendida o text_to_write_in_last_cell
     logging.info(f"Escreveu a diferença de valores ({diferencaDiariaAceitesSTR}) na célula J da linha {row_to_write}!")
 except Exception as e:
         logging.error(f"Ocorreu um erro: {str(e)}", exc_info=True)
+
 
 #Habilita de novo a suspensão do computador
 os.system("gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 300")
